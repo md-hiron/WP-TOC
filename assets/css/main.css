@@ -1,14 +1,1 @@
-.toc-generator {     
-    padding: 10px 20px;
-    background-color: #f9f9f9;
-    border: 1px solid #aaaaaa; 
-}
-.toc-generator h3 { margin-top: 0; }
-.toc-generator ul { list-style: none; padding-left: 0; }
-.toc-generator li { margin-bottom: 5px; }
 .toc-generator .toc-sub-item { margin-left: 20px; }
-.toc-generator ul li a{ color: #0067ce }
-.toc-generator ul li a:hover{
-    color: inherit;
-    text-decoration: underline
-}
