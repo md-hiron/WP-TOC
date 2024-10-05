@@ -15,6 +15,15 @@ define('BS24_TOS_DIR', plugin_dir_path(__FILE__));
 define('BS24_TOS_URL', plugin_dir_url(__FILE__));
 
 /**
+ * Making translateable
+ */
+add_action( 'plugins_loaded', array( $this, 'bs24_load_textdomain' ) );
+
+function bs24_load_textdomain(){
+    load_plugin_textdomain( 'bs24_tos', false, BS24_TOS_URL . 'languages/' );
+}
+
+/**
  * Enqueue external script files
  */
 add_action( 'wp_enqueue_scripts', 'bs24_registered_scripts' );

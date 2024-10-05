@@ -1,0 +1,34 @@
+# Copyright (C) 2024 Md Hiron Mia
+# This file is distributed under the same license as the BS24 TOC Generator plugin.
+msgid ""
+msgstr ""
+"Project-Id-Version: BS24 TOC Generator 1.0\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/bs24-toc-generator\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2024-10-05T10:47:04+00:00\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"X-Generator: WP-CLI 2.11.0\n"
+"X-Domain: bs24_tos\n"
+
+#. Plugin Name of the plugin
+#: bs24-tos-generator.php
+msgid "BS24 TOC Generator"
+msgstr ""
+
+#. Description of the plugin
+#: bs24-tos-generator.php
+msgid "Generates a table of contents based on <h2> and <h3> headings automatically."
+msgstr ""
+
+#. Author of the plugin
+#: bs24-tos-generator.php
+msgid "Md Hiron Mia"
+msgstr ""
+
+#: bs24-tos-generator.php:62
+msgid "Inhaltsverzeichnis"
+msgstr ""
