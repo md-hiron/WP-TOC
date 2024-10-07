@@ -29,8 +29,13 @@ function bs24_load_textdomain(){
 add_action( 'wp_enqueue_scripts', 'bs24_registered_scripts' );
 
 function bs24_registered_scripts(){
-    wp_enqueue_style( 'bs24_tos_main', BS24_TOS_URL . 'assets/css/main.css', array(), '1.0' );
+    if ( has_shortcode( get_post()->post_content, 'toc-generator' ) ) {
+        wp_enqueue_style( 'bs24_tos_main', BS24_TOS_URL . 'assets/css/main.css', array(), '1.0' );
+    }
+    
 }
+
+
 
 /**
  * Shortcode for the TOS
@@ -61,43 +66,67 @@ function bs24_toc_shortcode( $atts ) {
  * @return string html data of table of content
  */
 function bs24_create_toc( $content ) {
-    // Use regex to find all <h2> and <h3> tags
-    preg_match_all('/<h2(?![^>]*class="[^"]*gb-headline[^"]*").*?>(.*?)<\/h2>|<h3(?![^>]*class="[^"]*gb-headline[^"]*").*?>(.*?)<\/h3>/', $content, $matches, PREG_SET_ORDER);
 
-    if (empty($matches)) {
-        return ''; // No headings found, no TOC needed.
+    if( empty( $content ) ){
+        return '';
     }
 
-    $toc = '<div class="toc-generator" role="navigation" aria-labelledby="toc-title"><h3>'. __( 'Inhaltsverzeichnis', 'bs24_tos' ) .'</h3>
-                <ul>';
+    // Create a new DOMDocument
+    $dom = new DOMDocument();
+
+    // Suppress errors due to malformed HTML
+    libxml_use_internal_errors(true);
+
+    // Load the post content into the DOMDocument
+    $dom->loadHTML('<?xml encoding="utf-8" ?>' . $content);
+
+    // Get the body element of the DOM
+    $body = $dom->getElementsByTagName('body')->item(0);
+
+    if ( empty( $body ) ) {
+        return ''; // Return empty string if there's no body tag (rare, but possible)
+    }
+
+    // Initialize counters for headings
     $h2_count = 0;
     $h3_count = 0;
-    $current_h2_index = 0;
 
-    // Loop through matches and build the TOC
-    foreach ($matches as $match) {
-        if (!empty($match[1])) {
-            // It's an <h2>
+    // Initialize TOC array to store the links
+    $toc = [];
+
+    // Traverse all the <h2> and <h3> tags
+    foreach ($body->getElementsByTagName('*') as $element) {
+        // Check for h2 tags that do not have the "gb-headline" class (for GenerateBlocks headings)
+        if ($element->nodeName === 'h2' && (!$element->hasAttribute('class') || strpos($element->getAttribute('class'), 'gb-headline') === false)) {
             $h2_count++;
             $h3_count = 0; // Reset h3 count for each new h2
-            $current_h2_index = $h2_count;
-            $heading_text = strip_tags($match[1]);
-            $heading_anchor = preg_replace('/[^a-zA-Z0-9]/', '-', sanitize_title( $heading_text ));
 
-            $toc .= '<li>' . esc_html( $h2_count ) . '. <a href="'. esc_url( '#'. $heading_anchor, ['https'] ) . '" aria-label="Go to section: '. esc_attr( $heading_text ) .'">' . esc_html( $heading_text ) . '</a></li>';
-        } elseif (!empty($match[2])) {
-            // It's an <h3>
+            $heading_text = trim($element->textContent);
+            $heading_anchor = sanitize_title($heading_text);
+
+            // Add the heading to the TOC
+            $toc[] = '<li>' . esc_html($h2_count) . '. <a href="#' . esc_attr($heading_anchor) . '" aria-label="Go to section: '. esc_attr( $heading_text ) .'">' . esc_html($heading_text) . '</a></li>';
+
+        } elseif ($element->nodeName === 'h3' && (!$element->hasAttribute('class') || strpos($element->getAttribute('class'), 'gb-headline') === false)) {
             $h3_count++;
-            $heading_text = strip_tags($match[2]);
-            $heading_anchor = preg_replace('/[^a-zA-Z0-9]/', '-', sanitize_title( $heading_text ) );
-            $toc .= '<li class="toc-sub-item">' . esc_html( $h2_count . '.'.$h3_count ) .' <a href="' . esc_url( '#'. $heading_anchor, ['https'] ) . '" aria-label="Go to section: '. esc_attr( $heading_text ) .'">' . esc_html( $heading_text )  . '</a></li>';
+
+            $heading_text = trim($element->textContent);
+            $heading_anchor = sanitize_title($heading_text);
+
+            // Add the sub-heading to the TOC
+            $toc[] = '<li class="toc-sub-item">' . esc_html($h2_count . '.' . $h3_count) . ' <a href="#' . esc_attr($heading_anchor) . '"  aria-label="Go to section: '. esc_attr( $heading_text ) .'">' . esc_html($heading_text) . '</a></li>';
         }
     }
 
-    $toc .= '</ul></div>';
+    // Convert the updated HTML back to string
+    $updated_content = $dom->saveHTML($body);
 
-    // Return the generated TOC
-    return $toc;
+    // Return TOC HTML if headings were found
+    if (!empty($toc)) {
+        return '<div class="toc-generator" role="navigation" aria-labelledby="toc-title"><h3>'. __( 'Inhaltsverzeichnis', 'bs24_tos' ) .'</h3><ul>' . implode('', $toc) . '</ul></div>';
+    }
+
+    return ''; // Return an empty string if no headings were found
 }
 
 
@@ -107,38 +136,39 @@ function bs24_create_toc( $content ) {
 add_filter('the_content', 'bs24_add_anchors');
 
 function bs24_add_anchors( $content ) {
-    // Get the current post type
-    if (!is_singular(['post', 'page'])) {
-        return $content; // If not the specified post types, return the content unmodified
+    // Create a new DOMDocument
+    $dom = new DOMDocument();
+
+    // Suppress errors due to malformed HTML
+    libxml_use_internal_errors(true);
+
+    // Load the post content into the DOMDocument
+    $dom->loadHTML('<?xml encoding="utf-8" ?>' . $content);
+
+    // Get the body element of the DOM
+    $body = $dom->getElementsByTagName('body')->item(0);
+
+    //return the actual content if DOM is empty
+    if( empty( $body ) ){
+        return $content;
     }
-    preg_match_all('/<h2(?![^>]*class="[^"]*gb-headline[^"]*").*?>(.*?)<\/h2>|<h3(?![^>]*class="[^"]*gb-headline[^"]*").*?>(.*?)<\/h3>/', $content, $matches, PREG_SET_ORDER);
 
-    if ( empty( $matches ) ) {
-        return $content; // No headings found, no TOC needed.
-    }
+    // Traverse all the <h2> and <h3> tags
+    foreach ($body->getElementsByTagName('*') as $element) {
+        // Check for h2 or h3 tags and add an ID if it's not a GenerateBlocks heading
+        if (($element->nodeName === 'h2' || $element->nodeName === 'h3') &&
+            (!$element->hasAttribute('class') || strpos($element->getAttribute('class'), 'gb-headline') === false)) {
+            $heading_text = trim($element->textContent);
+            $heading_anchor = sanitize_title($heading_text);
 
-    $h2_count = 0;
-    $h3_count = 0;
-
-    foreach ($matches as $match) {
-        if (!empty($match[1])) {
-            // It's an <h2>
-            $h2_count++;
-            $h3_count = 0; // Reset h3 count for each new h2
-            $heading_text = strip_tags($match[1]);
-            $heading_anchor = preg_replace('/[^a-zA-Z0-9]/', '-', sanitize_title( $heading_text ) );
-            $content = preg_replace('/<h2(?![^>]*class="[^"]*gb-headline[^"]*").*?>' . preg_quote($match[1], '/') . '<\/h2>/', '<h2 id="' . esc_attr( $heading_anchor ) . '">' . wp_kses_post($match[1]) . '</h2>', $content, 1);
-        } elseif ( !empty($match[2]) ) {
-            // It's an <h3>
-            $h3_count++;
-            $heading_text = strip_tags($match[2]);
-            $heading_anchor = preg_replace('/[^a-zA-Z0-9]/', '-', sanitize_title( $heading_text ) );
-            $content = preg_replace('/<h3(?![^>]*class="[^"]*gb-headline[^"]*").*?>' . preg_quote($match[2], '/') . '<\/h3>/', '<h3 id="' . esc_attr( $heading_anchor ) . '">' . wp_kses_post($match[2]) . '</h3>', $content, 1);
-      
+            // Add ID attribute to the heading element
+            $element->setAttribute('id', $heading_anchor);
         }
     }
 
-    return $content;
+    // Convert the updated HTML back to string
+    return $dom->saveHTML($body);
+    
 }
 
 
