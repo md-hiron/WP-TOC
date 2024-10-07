@@ -29,8 +29,9 @@ function bs24_load_textdomain(){
 add_action( 'wp_enqueue_scripts', 'bs24_registered_scripts' );
 
 function bs24_registered_scripts(){
-    if ( has_shortcode( get_post()->post_content, 'toc-generator' ) ) {
-        wp_enqueue_style( 'bs24_toc_main', BS24_TOC_URL . 'assets/css/main.css', array(), '1.0' );
+    $post = get_post();
+    if ( $post && !empty( $post->post_content ) && has_shortcode( $post->post_content, 'toc-generator' ) ) {
+        wp_enqueue_style( 'bs24_toc_main', BS24_TOC_URL . 'assets/css/main.css', array(), '1.1' );
     }
     
 }
@@ -145,7 +146,7 @@ function bs24_create_toc( $content ) {
 
     // Return TOC HTML if headings were found
     if (!empty($toc)) {
-        return '<div class="toc-generator" role="navigation" aria-labelledby="toc-title"><h3>'. __( 'Inhaltsverzeichnis', 'bs24_toc' ) .'</h3><ul>' . implode('', $toc) . '</ul></div>';
+        return '<div class="toc-generator" role="navigation" aria-labelledby="toc-title"><h3>'. __( 'Inhaltsverzeichnis', 'bs24_toc' ) .'</h3><nav><ol>' . implode('', $toc) . '</ol></nav></div>';
     }
 
     return ''; // Return an empty string if no headings were found

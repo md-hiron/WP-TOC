@@ -1,1 +1,67 @@
-.toc-generator .toc-sub-item { margin-left: 20px; }
+.toc-generator .toc-sub-item { margin-left: 10px; }
+
+
+/* toc-generator */
+.toc-generator {
+    padding: 10px 20px;
+    background-color: #f9f9f9;
+    border: 1px solid #aaaaaa;
+    font-size: 100%; /* Slightly increase the base font size */
+  }
+  
+  .toc-generator h2,
+  .toc-generator h1,
+  .toc-generator h3,
+  .toc-generator h4,
+  .toc-generator h5,
+  .toc-generator h6 {
+    text-align: left; /* Align the heading to the left */
+    margin: 0;
+  }
+  
+  .toc-generator nav ol {
+    list-style-type: none; /* Removes automatic numbering */
+    counter-reset: none; /* Prevents further numbering */
+    padding-left: 0; /* No extra padding for the main list */
+  }
+  
+  .toc-generator nav ol li::before {
+    content: ''; /* Prevents numbers from appearing */
+  }
+  
+  .toc-generator nav {
+    margin: 20px 0;
+  }
+  
+  .toc-generator nav li {
+    margin: 10px 0;
+    padding-left: 0; /* Ensure no padding for the main list items */
+  }
+  
+  .toc-generator nav li a:hover {
+    color: inherit;
+  }
+  
+  /* Indent subtopics and sub-subtopics */
+  .toc-generator nav ol li.toc-sub-item {
+    padding-left: 20px; /* Indentation for subtopics */
+    font-size: 100%; /* Maintain base font size for subtopics */
+  }
+  
+  .toc-generator nav ol > ol > ol > li {
+    padding-left: 40px; /* Additional indentation for sub-subtopics */
+    font-size: 90%; /* Slightly reduce font size for sub-subtopics */
+  }
+  
+  /* Font size adjustments */
+  .toc-generator nav ol {
+    font-size: 110%; /* Increase the overall base font size */
+  }
+  
+  .toc-generator nav ol > li.toc-sub-item {
+    font-size: 100%; /* Subtopics will be slightly smaller */
+  }
+  
+  .toc-generator nav ol > ol > ol > li {
+    font-size: 90%; /* Sub-subtopics will be even smaller */
+  }
