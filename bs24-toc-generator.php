@@ -31,7 +31,7 @@ add_action( 'wp_enqueue_scripts', 'bs24_registered_scripts' );
 function bs24_registered_scripts(){
     $post = get_post();
     if ( $post && !empty( $post->post_content ) && has_shortcode( $post->post_content, 'toc-generator' ) ) {
-        wp_enqueue_style( 'bs24_toc_main', BS24_TOC_URL . 'assets/css/main.css', array(), '1.1' );
+        wp_enqueue_style( 'bs24_toc_main', BS24_TOC_URL . 'assets/css/main.css', array(), '1.3' );
     }
     
 }
@@ -197,11 +197,50 @@ function bs24_add_anchors( $content ) {
 /**
  * Clear transient during save post
  */
-add_action('save_post', 'bs24_clear_toc_cache');
+add_action('save_post', 'bs24_clear_single_toc_cache');
 
-function bs24_clear_toc_cache($post_id) {
+function bs24_clear_single_toc_cache($post_id) {
     $cache_key = 'bs24_toc_' . $post_id . '_' . md5(get_post_field('post_modified', $post_id));
     delete_transient($cache_key);
 }
 
 
+// Hook to run on plugin activation
+register_activation_hook(__FILE__, 'bs24_clear_toc_cache_on_activation');
+function bs24_clear_toc_cache_on_activation() {
+    bs24_clear_toc_cache();  // Call the cache clearing function
+}
+
+// Hook to run on plugin deactivation
+register_deactivation_hook(__FILE__, 'bs24_clear_toc_cache_on_deactivation');
+function bs24_clear_toc_cache_on_deactivation() {
+    bs24_clear_toc_cache();  // Call the cache clearing function
+}
+
+// Function to clear all cached TOCs securely
+function bs24_clear_toc_cache() {
+    global $wpdb;
+
+    // Check if the current user has the capability to manage options (admin-level permission)
+    if (!current_user_can('manage_options')) {
+        return;
+    }
+
+    // Prepare and sanitize the SQL query to delete transient options for TOC cache
+    $query_transients = $wpdb->prepare(
+        "DELETE FROM {$wpdb->options} WHERE option_name LIKE %s",
+        $wpdb->esc_like('_transient_bs24_toc_') . '%'
+    );
+    
+    // Execute the deletion query for transients
+    $wpdb->query($query_transients);
+
+    // Prepare and sanitize the SQL query to delete expired transient timeouts
+    $query_timeouts = $wpdb->prepare(
+        "DELETE FROM {$wpdb->options} WHERE option_name LIKE %s",
+        $wpdb->esc_like('_transient_timeout_bs24_toc_') . '%'
+    );
+    
+    // Execute the deletion query for expired transients
+    $wpdb->query($query_timeouts);
+}
