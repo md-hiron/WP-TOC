@@ -20,7 +20,7 @@ define('BS24_TOS_URL', plugin_dir_url(__FILE__));
 add_action( 'plugins_loaded', 'bs24_load_textdomain' );
 
 function bs24_load_textdomain(){
-    load_plugin_textdomain( 'bs24_tos', false, BS24_TOS_URL . 'languages/' );
+    load_plugin_textdomain( 'bs24_tos', false, BS24_TOS_DIR . 'languages' );
 }
 
 /**
@@ -51,11 +51,33 @@ function bs24_toc_shortcode( $atts ) {
         return '';
     }
 
+    $post_id = $post->ID;
+    $post_modified = $post->post_modified;
+
+    // Generate a unique cache key based on post ID and last modified time
+    $cache_key = 'bs24_toc_' . $post_id . '_' . md5($post_modified);
+
+    // Try to retrieve the cached TOC from the transient
+    $cached_toc = get_transient($cache_key);
+    
+    if ($cached_toc !== false) {
+        // If a cached TOC exists, return it
+        return $cached_toc;
+    }
+
     $content = sanitize_post_field('post_content', $post->post_content, $post->ID, 'display');
     // Generate the Table of Contents
     $toc = bs24_create_toc($content);
     
-    return $toc;
+    //if we found toc Item we will store it in transient
+    if( !empty( $toc ) ){
+        set_transient( $cache_key, $toc, 24 * HOUR_IN_SECONDS );
+
+        return $toc;
+    }
+
+    return '';
+    
 }
 
 /**
@@ -169,6 +191,16 @@ function bs24_add_anchors( $content ) {
     // Convert the updated HTML back to string
     return $dom->saveHTML($body);
     
+}
+
+/**
+ * Clear transient during save post
+ */
+add_action('save_post', 'bs24_clear_toc_cache');
+
+function bs24_clear_toc_cache($post_id) {
+    $cache_key = 'bs24_toc_' . $post_id . '_' . md5(get_post_field('post_modified', $post_id));
+    delete_transient($cache_key);
 }
 
 
