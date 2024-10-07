@@ -12,23 +12,23 @@ msgstr ""
 "POT-Creation-Date: 2024-10-05T10:47:04+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.11.0\n"
-"X-Domain: bs24_tos\n"
+"X-Domain: bs24_toc\n"
 
 #. Plugin Name of the plugin
-#: bs24-tos-generator.php
+#: bs24-toc-generator.php
 msgid "BS24 TOC Generator"
 msgstr ""
 
 #. Description of the plugin
-#: bs24-tos-generator.php
+#: bs24-toc-generator.php
 msgid "Generates a table of contents based on <h2> and <h3> headings automatically."
 msgstr ""
 
 #. Author of the plugin
-#: bs24-tos-generator.php
+#: bs24-toc-generator.php
 msgid "Md Hiron Mia"
 msgstr ""
 
-#: bs24-tos-generator.php:62
+#: bs24-toc-generator.php:62
 msgid "Inhaltsverzeichnis"
 msgstr ""

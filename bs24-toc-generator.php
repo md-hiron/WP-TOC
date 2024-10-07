@@ -4,15 +4,15 @@
  * Description: Generates a table of contents based on <h2> and <h3> headings automatically.
  * Version: 1.0
  * Author: Md Hiron Mia
- * Text Domain: bs24_tos
+ * Text Domain: bs24_toc
  */
 
 if (!defined('ABSPATH')) {
     exit; // Exit if accessed directly.
 }
 
-define('BS24_TOS_DIR', plugin_dir_path(__FILE__));
-define('BS24_TOS_URL', plugin_dir_url(__FILE__));
+define('BS24_TOC_DIR', plugin_dir_path(__FILE__));
+define('BS24_TOC_URL', plugin_dir_url(__FILE__));
 
 /**
  * Making translateable
@@ -20,7 +20,7 @@ define('BS24_TOS_URL', plugin_dir_url(__FILE__));
 add_action( 'plugins_loaded', 'bs24_load_textdomain' );
 
 function bs24_load_textdomain(){
-    load_plugin_textdomain( 'bs24_tos', false, BS24_TOS_DIR . 'languages' );
+    load_plugin_textdomain( 'bs24_toc', false, BS24_TOC_DIR . 'languages' );
 }
 
 /**
@@ -30,7 +30,7 @@ add_action( 'wp_enqueue_scripts', 'bs24_registered_scripts' );
 
 function bs24_registered_scripts(){
     if ( has_shortcode( get_post()->post_content, 'toc-generator' ) ) {
-        wp_enqueue_style( 'bs24_tos_main', BS24_TOS_URL . 'assets/css/main.css', array(), '1.0' );
+        wp_enqueue_style( 'bs24_toc_main', BS24_TOC_URL . 'assets/css/main.css', array(), '1.0' );
     }
     
 }
@@ -38,7 +38,7 @@ function bs24_registered_scripts(){
 
 
 /**
- * Shortcode for the TOS
+ * Shortcode for the TOC
  */
 add_shortcode('toc-generator', 'bs24_toc_shortcode');
 
@@ -145,7 +145,7 @@ function bs24_create_toc( $content ) {
 
     // Return TOC HTML if headings were found
     if (!empty($toc)) {
-        return '<div class="toc-generator" role="navigation" aria-labelledby="toc-title"><h3>'. __( 'Inhaltsverzeichnis', 'bs24_tos' ) .'</h3><ul>' . implode('', $toc) . '</ul></div>';
+        return '<div class="toc-generator" role="navigation" aria-labelledby="toc-title"><h3>'. __( 'Inhaltsverzeichnis', 'bs24_toc' ) .'</h3><ul>' . implode('', $toc) . '</ul></div>';
     }
 
     return ''; // Return an empty string if no headings were found
