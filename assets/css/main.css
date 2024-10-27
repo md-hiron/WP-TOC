@@ -44,8 +44,8 @@
   
   /* Indent subtopics and sub-subtopics */
   .toc-generator nav ol li.toc-sub-item {
-    padding-left: 20px; /* Indentation for subtopics */
-    font-size: 100%; /* Maintain base font size for subtopics */
+    padding-left: 20px !important; /* Indentation for subtopics */
+    font-size: 100% !important; /* Maintain base font size for subtopics */
   }
   
   .toc-generator nav ol > ol > ol > li {
@@ -55,11 +55,11 @@
   
   /* Font size adjustments */
   .toc-generator nav ol {
-    font-size: 110%; /* Increase the overall base font size */
+    font-size: 100% !important; /* Increase the overall base font size */
   }
   
   .toc-generator nav ol > li.toc-sub-item {
-    font-size: 100%; /* Subtopics will be slightly smaller */
+    font-size: 100% !important; /* Subtopics will be slightly smaller */
   }
   
   .toc-generator nav ol > ol > ol > li {

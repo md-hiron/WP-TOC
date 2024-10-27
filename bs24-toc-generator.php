@@ -29,10 +29,9 @@ function bs24_load_textdomain(){
 add_action( 'wp_enqueue_scripts', 'bs24_registered_scripts' );
 
 function bs24_registered_scripts(){
-    $post = get_post();
-    if ( $post && !empty( $post->post_content ) && has_shortcode( $post->post_content, 'toc-generator' ) ) {
-        wp_enqueue_style( 'bs24_toc_main', BS24_TOC_URL . 'assets/css/main.css', array(), '1.3' );
-    }
+    if ( is_singular() ) {
+		wp_enqueue_style( 'bs24_toc_main', BS24_TOC_URL . 'assets/css/main.css', array(), '1.3' );
+	}
     
 }
 
@@ -94,14 +93,23 @@ function bs24_create_toc( $content ) {
         return '';
     }
 
-    // Create a new DOMDocument
-    $dom = new DOMDocument();
-
     // Suppress errors due to malformed HTML
     libxml_use_internal_errors(true);
 
-    // Load the post content into the DOMDocument
-    $dom->loadHTML('<?xml encoding="utf-8" ?>' . $content);
+    // Create a new DOMDocument
+    $dom = new DOMDocument();
+
+    try {
+        // Attempt to load the content into DOMDocument
+        $dom->loadHTML('<?xml encoding="utf-8" ?>' . mb_convert_encoding($content, 'HTML-ENTITIES', 'UTF-8'));
+    } catch (Exception $e) {
+        // Log the error message if there's a failure in loading HTML
+        error_log('Error loading HTML in bs24_create_toc: ' . $e->getMessage());
+        return ''; // Return empty string if there's an issue
+    }
+    
+    // Clear libxml errors after the attempt to load HTML
+    libxml_clear_errors();
 
     // Get the body element of the DOM
     $body = $dom->getElementsByTagName('body')->item(0);
@@ -116,6 +124,8 @@ function bs24_create_toc( $content ) {
 
     // Initialize TOC array to store the links
     $toc = [];
+    // Array to keep track of generated anchors
+    $anchor_counts = [];
 
     // Traverse all the <h2> and <h3> tags
     foreach ($body->getElementsByTagName('*') as $element) {
@@ -125,7 +135,15 @@ function bs24_create_toc( $content ) {
             $h3_count = 0; // Reset h3 count for each new h2
 
             $heading_text = trim($element->textContent);
-            $heading_anchor = sanitize_title($heading_text);
+            $heading_anchor = sanitize_title( replace_umlauts( $heading_text ) );
+
+            // Ensure unique anchors by appending a counter if needed
+            if (isset($anchor_counts[$heading_anchor])) {
+                $anchor_counts[$heading_anchor]++;
+                $heading_anchor .= '-' . $anchor_counts[$heading_anchor];
+            } else {
+                $anchor_counts[$heading_anchor] = 1;
+            }
 
             // Add the heading to the TOC
             $toc[] = '<li>' . esc_html($h2_count) . '. <a href="#' . esc_attr($heading_anchor) . '" aria-label="Go to section: '. esc_attr( $heading_text ) .'">' . esc_html($heading_text) . '</a></li>';
@@ -134,7 +152,15 @@ function bs24_create_toc( $content ) {
             $h3_count++;
 
             $heading_text = trim($element->textContent);
-            $heading_anchor = sanitize_title($heading_text);
+            $heading_anchor = sanitize_title( replace_umlauts( $heading_text ) );
+
+            // Ensure unique anchors by appending a counter if needed
+            if (isset($anchor_counts[$heading_anchor])) {
+                $anchor_counts[$heading_anchor]++;
+                $heading_anchor .= '-' . $anchor_counts[$heading_anchor];
+            } else {
+                $anchor_counts[$heading_anchor] = 1;
+            }
 
             // Add the sub-heading to the TOC
             $toc[] = '<li class="toc-sub-item">' . esc_html($h2_count . '.' . $h3_count) . ' <a href="#' . esc_attr($heading_anchor) . '"  aria-label="Go to section: '. esc_attr( $heading_text ) .'">' . esc_html($heading_text) . '</a></li>';
@@ -159,14 +185,24 @@ function bs24_create_toc( $content ) {
 add_filter('the_content', 'bs24_add_anchors');
 
 function bs24_add_anchors( $content ) {
-    // Create a new DOMDocument
-    $dom = new DOMDocument();
 
     // Suppress errors due to malformed HTML
     libxml_use_internal_errors(true);
 
-    // Load the post content into the DOMDocument
-    $dom->loadHTML('<?xml encoding="utf-8" ?>' . $content);
+    // Create a new DOMDocument
+    $dom = new DOMDocument();
+
+    try {
+        // Attempt to load the content into DOMDocument
+        $dom->loadHTML('<?xml encoding="utf-8" ?>' . mb_convert_encoding($content, 'HTML-ENTITIES', 'UTF-8'));
+    } catch (Exception $e) {
+        // Log the error message if there's a failure in loading HTML
+        error_log('Error loading HTML in bs24_create_toc: ' . $e->getMessage());
+        return ''; // Return empty string if there's an issue
+    }
+    
+    // Clear libxml errors after the attempt to load HTML
+    libxml_clear_errors();
 
     // Get the body element of the DOM
     $body = $dom->getElementsByTagName('body')->item(0);
@@ -176,16 +212,27 @@ function bs24_add_anchors( $content ) {
         return $content;
     }
 
+    // Array to keep track of generated anchors
+    $anchor_counts = [];
+
     // Traverse all the <h2> and <h3> tags
     foreach ($body->getElementsByTagName('*') as $element) {
         // Check for h2 or h3 tags and add an ID if it's not a GenerateBlocks heading
         if (($element->nodeName === 'h2' || $element->nodeName === 'h3') &&
             (!$element->hasAttribute('class') || strpos($element->getAttribute('class'), 'gb-headline') === false)) {
             $heading_text = trim($element->textContent);
-            $heading_anchor = sanitize_title($heading_text);
+            $heading_anchor = sanitize_title( replace_umlauts( $heading_text ) );
+
+            // Ensure unique anchors by appending a counter if needed
+            if (isset($anchor_counts[$heading_anchor])) {
+                $anchor_counts[$heading_anchor]++;
+                $heading_anchor .= '-' . $anchor_counts[$heading_anchor];
+            } else {
+                $anchor_counts[$heading_anchor] = 1;
+            }
 
             // Add ID attribute to the heading element
-            $element->setAttribute('id', $heading_anchor);
+            $element->setAttribute('id', esc_attr( $heading_anchor ));
         }
     }
 
@@ -231,16 +278,35 @@ function bs24_clear_toc_cache() {
         "DELETE FROM {$wpdb->options} WHERE option_name LIKE %s",
         $wpdb->esc_like('_transient_bs24_toc_') . '%'
     );
-    
-    // Execute the deletion query for transients
-    $wpdb->query($query_transients);
 
-    // Prepare and sanitize the SQL query to delete expired transient timeouts
-    $query_timeouts = $wpdb->prepare(
-        "DELETE FROM {$wpdb->options} WHERE option_name LIKE %s",
-        $wpdb->esc_like('_transient_timeout_bs24_toc_') . '%'
+    $transients = $wpdb->get_results(
+        $wpdb->prepare( "SELECT option_name from {$wpdb->options} WHERE option_name LIKE %s", $wpdb->esc_like('_transient_bs24_toc_') . '%' )
     );
-    
-    // Execute the deletion query for expired transients
-    $wpdb->query($query_timeouts);
+
+    if( !empty( $transients ) ){
+        foreach( $transients as $transient ){
+            $transient_name = str_replace('_transient_', '', $transient->option_name);
+
+            //delete transient
+            delete_option( '_transient_'. $transient_name );
+
+            //delete transient timeout data
+            delete_option( '_transient_timeout_'. $transient_name );
+        }
+    }
+}
+
+
+//function to replace German umlauts consistently
+function replace_umlauts($text) {
+    $umlaut_map = [
+        'ä' => 'ae',
+        'ö' => 'oe',
+        'ü' => 'ue',
+        'ß' => 'ss',
+        'Ä' => 'Ae',
+        'Ö' => 'Oe',
+        'Ü' => 'Ue'
+    ];
+    return strtr($text, $umlaut_map);
 }
